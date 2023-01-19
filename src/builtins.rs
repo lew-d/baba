@@ -1,6 +1,6 @@
 use std::{env, path::Path, process::Child};
 
-pub fn builtins(command: &str, previous_command: &mut Option<Child>) -> bool {
+pub fn builtins(command: &str, previous_command: &mut Option<Child>) -> Result<bool, ()> {
     // everything after the first whitespace character is interpreted as args to the command
     let mut parts = command.trim().split_whitespace();
     let command = parts.next().unwrap();
@@ -17,12 +17,9 @@ pub fn builtins(command: &str, previous_command: &mut Option<Child>) -> bool {
 
             *previous_command = None;
 
-            true
+            Ok(true)
         }
-        "exit" => {
-            // end current process
-            std::process::exit(0);
-        }
-        _ => false,
+        "exit" => Err(()),
+        _ => Ok(false),
     }
 }

@@ -4,11 +4,25 @@ use std::collections::HashMap;
 
 use config::{Config, Value, ValueKind};
 
+fn home() -> String {
+    // find home directory
+
+    // if home is set in env, use that
+    if let Ok(home) = std::env::var("HOME") {
+        return home;
+    } else {
+        panic!("Home directory not found");
+    }
+}
+
+pub fn config_dir() -> String {
+    format!("{}/.baba", home())
+}
+
 // load environment
 pub fn load_env() -> HashMap<String, Value> {
     Config::builder()
-        // Add in `./Settings.toml`
-        .add_source(config::File::with_name("env"))
+        .add_source(config::File::with_name(&format!("{}/env", config_dir())))
         .build()
         .unwrap()
         .try_deserialize()

@@ -25,10 +25,14 @@ fn handle_err(e: ReadlineError) {
 }
 
 fn main() -> Result<()> {
+    let history = &format!("{}/history", env::config_dir());
+
     let mut rl = Editor::<()>::new()?;
-    if rl.load_history("history.txt").is_err() {
+    if rl.load_history(history).is_err() {
         println!("No previous history.");
     }
+
+    println!("{}", env::config_dir());
 
     let env = load_env();
 
@@ -57,9 +61,18 @@ fn main() -> Result<()> {
 
         while let Some(command) = peekable_command.next() {
             // break if we get a hit
-            if builtins(command, &mut previous_command) {
-                break;
-            };
+            match builtins(command, &mut previous_command) {
+                Ok(true) => {
+                    break;
+                }
+                Ok(false) => {}
+                Err(_) => {
+                    // save history
+                    rl.save_history(&format!("{}/history", env::config_dir()))
+                        .unwrap();
+                    std::process::exit(0);
+                }
+            }
 
             let stdin = previous_command.map_or(Stdio::inherit(), |output: Child| {
                 Stdio::from(output.stdout.unwrap())
@@ -99,5 +112,6 @@ fn main() -> Result<()> {
             final_command.wait().unwrap();
         }
     }
-    rl.save_history("history.txt")
+
+    rl.save_history(&format!("{}/history", env::config_dir()))
 }
